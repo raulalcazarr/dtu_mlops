@@ -13,6 +13,15 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.utils import save_image
+import hydra
+
+@hydra.main(config_name="config.yaml")
+
+def main(cfg):
+    print(cfg.hyperparameters.lr, cfg.hyperparameters.epochs, cfg.hyperparameters.latent_dim, cfg.hyperparameters.seed, cfg.hyperparameters.x_dim, cfg.hyperparameters.hidden_dim, cfg.hyperparameters.batch_size)
+
+if __name__ == "__main__":
+    main()
 
 # Model Hyperparameters
 dataset_path = "~/datasets"
@@ -21,6 +30,9 @@ DEVICE = torch.device("cuda" if cuda else "cpu")
 batch_size = 100
 x_dim = 784
 hidden_dim = 400
+seed = 42
+
+torch.manual_seed(seed)
 
 # Data loading
 mnist_transform = transforms.Compose([transforms.ToTensor()])
