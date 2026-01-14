@@ -37,6 +37,14 @@ class MyAwesomeModel(pl.LightningModule):
     def configure_optimizers(self):
         """Configure optimizer."""
         return torch.optim.Adam(self.parameters(), lr=1e-3)
+    
+    def validation_step(self, batch) -> None:
+        data, target = batch
+        preds = self(data)
+        loss = self.criterion(preds, target)
+        acc = (target == preds.argmax(dim=-1)).float().mean()
+        self.log('val_loss', loss, on_epoch=True)
+        self.log('val_acc', acc, on_epoch=True)
 
 
 if __name__ == "__main__":

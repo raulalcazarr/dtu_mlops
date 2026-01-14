@@ -10,6 +10,10 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.utils import save_image
+from torch.utils.data import TensorDataset
+
+
+
 
 # Model Hyperparameters
 dataset_path = "datasets"
@@ -48,12 +52,12 @@ class Encoder(nn.Module):
         h_ = torch.relu(self.FC_input(x))
         mean = self.FC_mean(h_)
         log_var = self.FC_var(h_)
-        z = self.reparameterization(mean, log_var)
+        z = self.reparameterization(mean, torch.exp(log_var))
         return z, mean, log_var
 
     def reparameterization(self, mean, var):
         """Reparameterization trick to sample z values."""
-        epsilon = torch.randn(*var.shape)
+        epsilon = torch.randn(*var.shape, device = mean.device)
         return mean + var * epsilon
 
 
@@ -63,7 +67,7 @@ class Decoder(nn.Module):
     def __init__(self, latent_dim, hidden_dim, output_dim) -> None:
         super().__init__()
         self.FC_hidden = nn.Linear(latent_dim, hidden_dim)
-        self.FC_output = nn.Linear(latent_dim, output_dim)
+        self.FC_output = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x):
         """Forward pass of the decoder module."""
@@ -107,6 +111,7 @@ optimizer = Adam(model.parameters(), lr=lr)
 print("Start training VAE...")
 model.train()
 for epoch in range(epochs):
+    optimizer.zero_grad()
     overall_loss = 0
     for batch_idx, (x, _) in enumerate(train_loader):
         if batch_idx % 100 == 0:
@@ -150,3 +155,10 @@ with torch.no_grad():
     generated_images = decoder(noise)
 
 save_image(generated_images.view(batch_size, 1, 28, 28), "generated_sample.png")
+
+
+# the class also internally normalize to [0,1] domain so we need to divide by 255
+train_dataset = MNIST(dataset_path, train=True, download=True)
+train_dataset = TensorDataset(train_dataset.data.float() / 255.0, train_dataset.targets)
+test_dataset = MNIST(dataset_path, train=False, download=True)
+test_dataset = TensorDataset(test_dataset.data.float() / 255.0, test_dataset.targets)
